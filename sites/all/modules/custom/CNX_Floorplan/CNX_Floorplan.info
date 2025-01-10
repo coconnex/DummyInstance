@@ -1,0 +1,4 @@
+name = CNX Floorplan
+description = Coconnex module for rendering floorplan.
+core = 6.x
+package = COCONNEX custom modules

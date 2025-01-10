@@ -1,0 +1,292 @@
+#fp_container {
+  overflow: hidden;
+}
+
+#fp_container,
+#floorplan {
+  /* background-color: #000000;    */
+  margin: 0px;
+  padding: 0px;
+  border: none;
+  position: relative;
+  left: 0px;
+  top: 0px;
+  overflow: hidden;
+  width: inherit;
+  height: inherit;
+  border: 1px solid #717171;
+}
+
+#floorplan>#fpbg,
+#floorplan>#fpbg>img,
+#floorplan>#fpex,
+#floorplan>#fpex>img,
+#floorplan>#fpex>svg,
+#floorplan>#fpfg,
+#floorplan>#fpfg>img,
+#floorplan>#fpev,
+#floorplan>#fpev>img,
+#floorplan>#fpev>svg {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  height: inherit;
+  width: inherit;
+}
+
+#floorplan>#fpbg {
+  z-index: 100;
+}
+
+#floorplan>#fpex {
+  z-index: 200;
+}
+
+#floorplan>#fpfg {
+  z-index: 300;
+}
+
+#floorplan>#fpev {
+  z-index: 400;
+}
+
+#floorplan>#fpev>svg {
+  opacity: 1;
+}
+
+/*Decline form css start*/
+
+#decline_reasons_message,
+#decline_reasons_options_container {
+  text-align: center;
+}
+
+#decline_reasons_message h4 {
+  color: brown;
+  font-weight: lighter;
+}
+
+#decline_reasons_message #cancel_decline,
+#decline_reasons_message #decline_contact_link {
+  padding: 10px 10px 10px 10px;
+  background-color: black;
+  border-radius: 5px;
+  width: fit-content;
+  margin: 18px auto 0px auto;
+
+}
+
+#decline_reasons_message #cancel_decline a,
+#decline_reasons_message #decline_contact_link a {
+  text-decoration: none;
+  color: white;
+}
+
+#decline_reasons_options_container>* {
+  margin-bottom: 10px;
+}
+
+#decline_reasons_options {
+  font-family: var(--base_font_family);
+  list-style-type: none;
+  background-color: grey;
+  width: 50%;
+  min-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: none;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+#decline_reasons_text {
+  width: 50%;
+  min-width: 540px;
+  border-radius: 5px;
+  box-shadow: none;
+  border: solid thin grey;
+}
+
+#decline_reasons_text:focus {
+  border: solid thin grey;
+  outline: none !important;
+}
+
+#decline_reasons_submit_container {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+#decline_reasons_submit_container>input {
+  font-family: var(--base_font_family);
+  margin: auto;
+  padding: 10px;
+  background-color: #000000;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 50%;
+  min-width: 540px;
+}
+
+/*Decline form css end*/
+
+/*Help css begins*/
+
+#help_outer {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 4000;
+}
+
+#help_outer.show {
+  display: block
+}
+
+#help_outer.hide {
+  display: none
+}
+
+#help_container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #FFFFFF;
+  width: 80vw;
+  max-height: 100vh;
+  border-radius: 5px;
+}
+
+#help_message {
+  overflow-y: scroll;
+  height: 50vh;
+  margin-top: 2vh;
+  margin-bottom: 2vh;
+}
+
+#help_message,
+#help_footer {
+  padding-left: 5%;
+  padding-right: 5%;
+  margin: auto;
+}
+
+#help_footer {
+  margin: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+}
+
+#help_continue_btn {
+  margin: auto;
+  padding: 10px 20px 10px 20px;
+  background-color: #000000;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  min-width: 260px;
+  font-family: inherit;
+  font-size: x-large;
+  margin-bottom: 10px;
+}
+
+#cart>#footer>#help_icon,
+#cart>#footer>#fpfit_icon {
+  padding: 0.5rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  text-align: center;
+  width: 20px;
+  height: 20px;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-family: inherit;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: 5px;
+  cursor: pointer;
+  font-size: large;
+}
+
+#cart>#footer>#fpfit_icon {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+#fpfit_icon,
+#userguide_icon {
+  padding: 0.5rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  text-align: center;
+  width: 20px;
+  height: 20px;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-family: inherit;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: 5px;
+  cursor: pointer;
+  font-size: large;
+}
+
+#contract_accepted_floorplan>#fpfit_icon {
+  display: flex;
+  flex-direction: column-reverse;
+  margin: 2% 2% 1% auto;
+  position: relative;
+  top: -100vh;
+  right: 0px;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+#userguide {
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  margin: auto;
+  width: fit-content;
+}
+
+#userguide_link {
+  text-decoration: none;
+  margin: auto;
+}
+
+
+
+#userguide>#userguide_icon div {
+  position: relative;
+  top: -2px;
+
+}
+
+.user_guide_icon,
+#userguide>#userguide_icon {
+  color: rgba(230, 0, 213, 1);
+}
+
+#userguide>#userguide_text {
+  color: rgba(230, 0, 213, 1);
+  font-size: large;
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-left: 5px;
+}
+
+
+
+/*Help css ends*/

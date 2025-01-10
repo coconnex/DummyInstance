@@ -1,0 +1,6 @@
+; $Id$
+name = Coconnex Live Checker Tool
+description = Coconnex Live Checker Tool to inspect that the necessary configurations have been set and there are no data exceptions.
+package = COCONNEX custom modules
+core = 6.x
+

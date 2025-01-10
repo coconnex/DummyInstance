@@ -1,0 +1,28 @@
+#status_container{
+    width: 90%;
+    height: 50px;
+    padding: 5px 5px;
+}
+/* .leg_block{
+    padding: 5px 25px;
+    float: left;
+    margin: auto 10px;
+    text-align: center;
+    border-radius: 5px;
+    border: 1px solid #717171;
+} */
+.leg_block{
+    padding: 10px 10px;
+    float: left;
+    margin: auto 10px;
+    text-align: center;
+    border-radius: 2px;
+    border: 1px solid #717171;
+}
+.column{
+    padding: 2px;
+  }
+.floorplan_legends{
+    display: block;
+    padding-right: 10px;
+}

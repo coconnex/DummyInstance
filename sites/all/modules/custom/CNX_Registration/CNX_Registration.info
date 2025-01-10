@@ -1,0 +1,4 @@
+name = CNX Registration
+description = Coconnex registration module is used for the registration purpose.
+core = 6.x
+package = COCONNEX custom modules

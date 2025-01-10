@@ -1,0 +1,219 @@
+#error_reasons_message,
+#error_reasons_options_container {
+    text-align: center;
+}
+
+.err-msg-sym {
+    font-size: larger;
+    padding: 10px;
+    background-color: brown;
+    border-radius: 50px;
+    width: 45px;
+    margin: auto auto 10px auto;
+    height: 45px;
+    color: white;
+}
+
+#error_reasons_message h4 {
+    color: brown;
+    font-weight: lighter;
+}
+
+#error_reasons_message #cancel_error,
+#error_reasons_message #error_contact_link {
+    padding: 10px 10px 10px 10px;
+    background-color: black;
+    border-radius: 5px;
+    width: fit-content;
+    margin: 18px auto 0px auto;
+}
+
+#error_reasons_message #cancel_error a,
+#error_reasons_message #error_contact_link a {
+    text-decoration: none;
+    color: white;
+}
+
+/*disclaimer styles start here*/
+
+#showwaitlink #show_name {
+    min-width: unset;
+}
+
+#showwaitlink .container {
+    text-align: center;
+    padding: 5%;
+}
+
+#showwaitlink #disclaimer {
+    text-align: justify;
+}
+
+#showwaitlink form>div {
+    text-align: center;
+}
+
+#showwaitlink #btnDisclaimer {
+    margin: unset;
+    border-style: unset;
+    background-color: var(--black);
+    color: var(--white);
+    padding: 10px;
+    border-radius: 5px;
+    margin: auto;
+    font-size: xx-large;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/*toast style start here*/
+
+.toast {
+    position: fixed;
+    width: 50vw;
+    height: 50px;
+    z-index: 100000000;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: rgba(126, 214, 154, 0.8);
+    border-radius: 5px;
+    color: black;
+    text-align: center;
+    display: flex;
+    left: 50%;
+    transform: translateX(-25vw);
+}
+
+.toast #toast_close {
+    width: fit-content;
+    height: fit-content;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-right: 5px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: grey;
+    cursor: pointer;
+}
+
+.toast #toast_msg {
+    margin: auto;
+    font-size: small;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.toast.animate {
+    -ms-animation: fadeIn 5s;
+    -webkit-animation: fadeIn 5s;
+    -moz-animation: fadeIn 5s;
+    -o-animation: fadeIn 5s;
+    animation: fadeIn 5s;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-moz-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* scrollbar CSS */
+
+/* * {
+    scrollbar-width: thin;
+    scrollbar-color: #7c7979 #f5f5f5;
+  } */
+  /* ********************horizontal********************** */
+
+ /* ::-webkit-scrollbar{
+	width:7px;
+    height:7px;
+	background-color: #c6c0c0;
+    border-radius: 8px !important;
+} */
+/* ::-webkit-scrollbar-thumb
+{
+	border-radius: 8px !important;
+    background-color: #686969;
+}
+::-webkit-scrollbar-thumb:horizontal
+{
+	border-top: 2px solid #c6c0c0;
+    border-bottom: 2px solid #c6c0c0;
+}
+::-webkit-scrollbar-thumb:vertical
+{
+	border-left: 2px solid #c6c0c0;
+    border-right: 2px solid #c6c0c0;
+    border-radius: 8px !important;
+} */
+
+
+
+.summary-msg-div::-webkit-scrollbar {
+    width: 12px;
+    background-color: transparent;
+	background-color: #c6c0c0;
+	 border-radius: 8px;
+}
+.summary-msg-div::-webkit-scrollbar-button {
+    color: #fff;
+    background-color: #fff;
+    border: 0;
+    border-radius: 0;
+}
+.summary-msg-div::-webkit-scrollbar-thumb {
+    background-color: #686969;
+    border-radius: 0px;
+}
+.summary-msg-div::-webkit-scrollbar-thumb {
+    background-color: #686969;
+    border-radius: 10px;
+    border: solid white 5px;
+}
+.summary-msg-div::-webkit-scrollbar-track {
+    border: 5px solid transparent;
+    background-color: #ffffff;
+}

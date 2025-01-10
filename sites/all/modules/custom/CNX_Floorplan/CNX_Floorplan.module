@@ -1,0 +1,273 @@
+<?php
+
+use Coconnex\API\IFPSS\Exhibitor\Managers\CNXExhibitorManager;
+use Coconnex\API\IFPSS\StandTransaction\Collection\ExhibStandTransactions;
+use Coconnex\Integrations\Coconnex\BackendAPIClient\Floorplan\Managers\FloorplanExpoManager;
+use Coconnex\Integrations\Coconnex\BackendAPIClient\Packages\Managers\PackageListManager;
+use Coconnex\Integrations\Coconnex\BackendAPIClient\Floorplan\Managers\FloorplanViewManager;
+use Coconnex\Utils\Handlers\TemplateHandler;
+use Coconnex\Utils\Config\Config;
+use Coconnex\Utils\Handlers\AssetHandler;
+
+/**
+ * @file CNX_Floorplan.module
+ *
+ * This module carries the common utility functions necessary for the rest of the CNX modules.
+ */
+function CNX_Floorplan_menu()
+{
+
+	$items['floorplan'] = array(
+		'title' => t('Self Service Floorplan'),
+		'page callback' => 'floorplan_display',
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Access Floorplan Display'),
+	);
+
+	$items['settings/floorplan'] = array(
+		'title' => t('Coconnex Floorplan Settings'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('floorplan_settings'),
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Access Coconnex Custom Settings'),
+	);
+	$items['floorplan/packages'] = array(
+		'title' => t('Package List'),
+		'page callback' => 'floorplan_packages',
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Access Packages'),
+	);
+	return $items;
+}
+
+
+function CNX_Floorplan_perm()
+{
+	return array("Access Floorplan Display", "Access Coconnex Custom Settings","Access Packages");
+}
+
+function floorplan_display()
+{
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Integrations/Coconnex/BackendAPIClient/Floorplan/Managers/FloorplanExpoManager.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Integrations/Coconnex/BackendAPIClient/Floorplan/Managers/FloorplanViewManager.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Integrations/Coconnex/BackendAPIClient/Packages/Managers/PackageListManager.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Handlers/TemplateHandler.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/Exhibitor/Managers/CNXExhibitorManager.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Config/Config.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Handlers/AssetHandler.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/StandTransaction/Collection/ExhibStandTransactions.Class.php");
+
+
+	global $user;
+	// if non logged in, redirect the user to login
+	if ($user->uid == 0) {
+		drupal_goto("/user");
+	}
+
+	$exhibitor_data = new CNXExhibitorManager(0, $user->uid);
+	$exhibitorProfileStatus = $exhibitor_data->getExhibitorProfileStatus();
+
+    if($exhibitorProfileStatus === false){
+		drupal_goto('/profile/compulsory');
+	}
+
+	$hallId = 138;
+
+	$fp_view_mgr = new FloorplanViewManager($hallId);
+	$arr_view = $fp_view_mgr->get();
+
+	$view_id = 0;
+	$baseurl = "";
+	$dstr = "";
+	$cachestr = "";
+	$zone_urn = 0;
+
+	$stands_count = 0;
+
+	if (count($arr_view) > 0) {
+		foreach ($arr_view as $idx => $view) {
+			$view_id = base64_decode($idx);
+			$baseurl = $view['baseurl'];
+			$dstr = $view['dstr'];
+			$cachestr = $view['cachestr'];
+		}
+	}
+
+	$customer_nid = $exhibitor_data->exhibitor->external_ref_id;
+
+	$package_list = new PackageListManager($customer_nid);
+	$arr_zone = $package_list->getZone();
+
+	$self_stands = array();
+	$obj_stand_transaction = new ExhibStandTransactions($user->uid, $user->roles, $customer_nid);
+	// debug($obj_stand_transaction,1);
+	foreach ($obj_stand_transaction->exhib_stand_transactions as $idx => $transactions) {
+		if ($transactions->status != 'CANCELLED') {
+			$self_stands[$transactions->stand_ref_id]['CURR'] = $transactions->status;
+			$self_stands[$transactions->stand_ref_id]['PREV'] = $transactions->previous_status;
+		}
+	}
+	$stands_count = count($self_stands);
+	// debug($self_stands,1);
+
+	$fp_expo_mgr = new FloorplanExpoManager($hallId);
+	$fp_expo_mgr->set_self_stands($self_stands);
+	$fp_expo_mgr->set_myzone($arr_zone);
+	$fp_expo_mgr->process();
+	$arr_display_statuses = $fp_expo_mgr->get_display_statuses();
+
+	$cart = set_cart($customer_nid);
+	$_SESSION['cart'] = serialize($cart);
+	// debug(set_cart($customer_nid),1);
+
+	$tpl_path = dirname(__FILE__) . "/templates/";
+	$vars['fp_bg_svg'] = $baseurl . '/cache.php?' . $dstr . '&c=' . $cachestr . '&v=back&vid=' . $view_id . '&hid=' . $hallId;
+
+	// $vars['fp_bg_svg'] = 'http://topdrawer.ag.local/cache.php?c&c=CxX&v=back&vid=763901&hid=138';
+
+	$vars['fp_ex_svg'] = $fp_expo_mgr->getExpoDOM();
+	$vars['fp_fg_svg'] = $baseurl . '/cache.php?' . $dstr . '&c=' . $cachestr . '&v=fore&vid=' . $view_id . '&hid=' . $hallId;
+
+	// $vars['fp_fg_svg'] = 'http://topdrawer.ag.local/cache.php?c&c=CxX&v=fore&vid=763901&hid=138';
+
+	$vars['fp_ev_svg'] = $fp_expo_mgr->getExpoEventDOM();
+	$vars['products'] = $package_list->get();
+	$vars['applicable_package'] = $package_list->get_applicable_packagelist();
+	$vars['statuses'] = json_encode($arr_display_statuses);
+
+	$obj_config = new Config("d6");
+	$vars['colours']['search'] = $obj_config::getvar("STANDS_SEARCHED_COLOUR");
+	$vars['colours']['in_cart'] = $obj_config::getvar("STANDS_IN_CART_COLOUR");
+	$vars['colours']['selected'] = $obj_config::getvar("STANDS_SELECTED_COLOUR");
+	$vars['is_waitinglist'] = $obj_config::getvar("IS_WAITINGLIST");
+	$vars['is_showstandname'] = $obj_config::getvar("DISPLAY_STAND_NAME");
+
+	// debug($vars['colours'],1);
+	$vars['stands_count'] = $stands_count;
+	$vars['cart'] = json_encode($cart);
+	return TemplateHandler::applyTemplateFile($tpl_path, "floorplan.tpl.php", $vars);
+}
+
+function floorplan_settings()
+{
+	global $base_url;
+	$path = $base_url . '/settings';
+	$elemwidth = "width: 150px;";
+
+	$form['standpropgroup'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Controlling stand property visibility</b>'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+		'#attributes' => array('style' => 'border:2px solid #d5d5d5; padding: 7px; margin-bottom: 10px; margin-top: 10px;')
+	);
+	$form['standpropgroup']['DISPLAY_STAND_DIMS'] = array(
+		'#type' => 'select',
+		'#title' => t('Control whether stand dimensions are displayed in the floor plan'),
+		'#options' => array('1' => 'Show', '0' => 'Hide'),
+		'#default_value' => variable_get('DISPLAY_STAND_DIMS', '0'),
+		'#attributes' => array('data-role' => 'none', "style" => $elemwidth)
+	);
+	$form['standpropgroup']['DISPLAY_STAND_AREA'] = array(
+		'#type' => 'select',
+		'#title' => t('Control whether stand area is displayed in the floor plan'),
+		'#options' => array('1' => 'Show', '0' => 'Hide'),
+		'#default_value' => variable_get('DISPLAY_STAND_AREA', '0'),
+		'#attributes' => array('data-role' => 'none', "style" => $elemwidth)
+	);
+	$form['standpropgroup']['DISPLAY_STAND_NAME'] = array(
+		'#type' => 'select',
+		'#title' => t('Control whether stand name is displayed in the floor plan'),
+		'#options' => array('1' => 'Show', '0' => 'Hide'),
+		'#default_value' => variable_get('DISPLAY_STAND_NAME', '0'),
+		'#attributes' => array('data-role' => 'none', "style" => $elemwidth)
+	);
+
+	$form['standcolourgroup'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Controlling stand colour</b>'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+		'#attributes' => array('style' => 'border:2px solid #d5d5d5; padding: 7px; margin-bottom: 10px; margin-top: 10px;')
+	);
+	$form['standcolourgroup']['STANDS_SEARCHED_COLOUR'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Defines the colour to be used for searched stands'),
+		'#default_value' => variable_get('STANDS_SEARCHED_COLOUR', ''),
+		'#attributes' => array('data-role' => 'none', "style" => $elemwidth),
+		'#description' => 'Add colour code with a # at the start'
+	);
+	$form['standcolourgroup']['STANDS_IN_CART_COLOUR'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Defines the colour to be used for stands added to cart'),
+		'#default_value' => variable_get('STANDS_IN_CART_COLOUR', ''),
+		'#attributes' => array('data-role' => 'none', "style" => $elemwidth),
+		'#description' => 'Add colour code with a # at the start'
+	);
+	$form['standcolourgroup']['STANDS_SELECTED_COLOUR'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Defines the colour to be used for selected stands'),
+		'#default_value' => variable_get('STANDS_SELECTED_COLOUR', '#bff8f9'),
+		'#attributes' => array('data-role' => 'none', "style" => $elemwidth),
+		'#description' => 'Add colour code with a # at the start'
+	);
+	$form['standpatterngroup'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Controlling stand pattern display</b>'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+		'#attributes' => array('style' => 'border:2px solid #d5d5d5; padding: 7px; margin-bottom: 10px; margin-top: 10px;')
+	);
+
+	$form['standpatterngroup']['PATTERN_STROKE_WIDTH'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Width of the pattern stroke'),
+		'#default_value' => variable_get('PATTERN_STROKE_WIDTH', ''),
+		'#description' => 'Provide an integer number to set the stroke width.'
+	);
+	$form['standpatterngroup']['PATTERN_DENSITY'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Density of the pattern'),
+		'#default_value' => variable_get('PATTERN_DENSITY', ''),
+		'#description' => 'Provide an integer number to define the density. Higher the number lesser is the density and vice versa.'
+	);
+	$form['waitinglistgroup'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Controlling Waiting List pattern display</b>'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+		'#attributes' => array('style' => 'border:2px solid #d5d5d5; padding: 7px; margin-bottom: 10px; margin-top: 10px;')
+	);
+	$form['waitinglistgroup']['WAITINGLIST_PATTERN'] = array(
+		'#type' => 'textarea',
+		'#title' => t('Defines the pattern to be shown for waitlisted stands'),
+		'#default_value' => variable_get('WAITINGLIST_PATTERN', ''),
+		'#description' => 'Add a pattern which will be added to DEFS'
+	);
+	$form['waitinglistgroup']['WAITINGLIST_PATTERN_COLOUR'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Colour for the pattern to be used on waitlisted stands within floor plan'),
+		'#default_value' => variable_get('WAITINGLIST_PATTERN_COLOUR', ''),
+		'#description' => 'Add colour code with a # at the start'
+	);
+
+	$form['BACK'] = array(
+		'#type' => 'item',
+		'#value' => "<a href='/settings' class='form-submit' style='font-size: 12pt;'>< Back to settings</a>",
+		'#weight' => 20,
+	);
+
+	return system_settings_form($form);
+}
+
+function floorplan_packages(){
+	global $user;
+	$exhibitor_data = new CNXExhibitorManager(0, $user->uid);
+	$customer_nid = $exhibitor_data->exhibitor->external_ref_id;
+	$tpl_path = dirname(__FILE__) . "/templates/";
+	$package_list = new PackageListManager($customer_nid);
+	$vars['applicable_package'] = $package_list->get_applicable_packagelist();
+	AssetHandler::add_asset("/assetscdn/floorplan/scripts/package_info.js", "script");
+	AssetHandler::add_asset("/assetscdn/floorplan/styles/popup.css", "stylesheet");
+	return TemplateHandler::applyTemplateFile($tpl_path, "packages_page.tpl.php", $vars);
+}

@@ -1,0 +1,4 @@
+name = CNX Reminder
+description = Used to manage reminder notifications.
+core = 6.x
+package = COCONNEX custom modules

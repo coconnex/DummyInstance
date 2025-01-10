@@ -1,0 +1,85 @@
+<?php
+use Coconnex\API\IFPSS\CallbackHooks\CallbackHooks;
+use Coconnex\Utils\Logger\Models\WatchDogD7;
+
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/CallbackHooks/CallbackHooks.Class.php");
+
+/**
+ * @file CNX_CallbackHooks.module
+ *
+ * CNX CallbackHooks module for manage call from other enviorments.
+ */
+function CNX_CallbackHooks_menu() {
+    $items['transaction/updatestatus'] = array(
+		'title' => t('Transaction Status Update CallbackHooks'),
+		'page callback' => 'CNX_CallbackHooks_update_transaction_status',
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Access CallbackHooks'),
+	);
+    $items['send/welcomeemail'] = array(
+		'title' => t('Welcome Email Send CallbackHooks'),
+		'page callback' => 'CNX_CallbackHooks_send_welcome_email',
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Access CallbackHooks'),
+	);
+
+    $items['transaction/updatestatusbystandnid'] = array(
+		'title' => t('Transaction Status Update CallbackHooks'),
+		'page callback' => 'CNX_CallbackHooks_update_transaction_status_by_standnid',
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Access CallbackHooks'),
+	);
+
+    return $items;
+}
+
+function CNX_CallbackHooks_perm()
+{
+    return array('Access CallbackHooks');
+}
+
+function CNX_CallbackHooks_update_transaction_status(){
+    global $user;
+    header("Content-Type:application/json");
+    $data = file_get_contents('php://input');
+    $postData = json_decode($data);
+    // watchdog('CLBK',print_r($postData,true));
+    // watchdog('CLBKUSR',print_r($user,true));
+    if($user->uid == 0){
+        $updated_by = $postData->updated_by;
+    }else{
+        $user_info = user_load($user->uid);
+        $updated_by = $user_info->profile_first_name.' '.$user_info->profile_last_name;
+    }
+    // watchdog('CLBKUSR',$updated_by);
+    CallbackHooks::updateTransactionStatus($user,$updated_by,$postData);
+}
+
+function CNX_CallbackHooks_update_transaction_status_by_standnid(){
+    global $user;
+    header("Content-Type:application/json");
+    $data = file_get_contents('php://input');
+    $postData = json_decode($data);
+    $result = CallbackHooks::updateTransactionStatusbyStandnid($user,$postData);
+    if($result == 'SUCCESS'){
+        $response = json_encode(array("statusCode" => true));
+    }else{
+        $response = json_encode(array("statusCode" => false));
+    }
+    echo $response;
+}
+
+
+
+function CNX_CallbackHooks_send_welcome_email(){
+    global $user;
+    header("Content-Type:application/json");
+    $exhib_nid = file_get_contents('php://input');
+    $result = CallbackHooks::sendWelcomeEmail($exhib_nid);
+    if($result == 'SUCCESS'){
+        $response = json_encode(array("statusCode" => true, "message" => "Email sent successfully."));
+    }else{
+        $response = json_encode(array("statusCode" => false, "message" => "Sorry! Error occurs while sending email."));
+    }
+    echo $response;
+}

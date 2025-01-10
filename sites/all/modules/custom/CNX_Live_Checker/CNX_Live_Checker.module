@@ -1,0 +1,98 @@
+<?php
+use Coconnex\Utils\Config\Config;
+use Coconnex\Utils\Handlers\TemplateHandler;
+
+function CNX_Live_Checker_menu() {
+
+	// $items['settings/checker'] = array(
+	// 	'title' => t('Pre Live Checker Settings'),
+	// 	'page callback' => 'drupal_get_form',
+	// 	'page arguments' => array('checkerSettings'),
+	// 	'type' => MENU_CALLBACK,
+	// 	'access arguments' => array('Pre Live Checker Settings')
+	// );
+	$items['checks'] = array(
+		'title' => t('Live Checks - Review'),
+		'page callback' => 'checksReview',
+		'type' => MENU_CALLBACK,
+		'access arguments' => array('Live Checker View')
+	);
+
+	return $items;
+}
+
+function CNX_Live_Checker_perm(){
+	return array('Live Checker Settings','Live Checker View');
+}
+
+function checksReview(){
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Config/Config.Class.php");
+	require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Handlers/TemplateHandler.Class.php");
+	require_once(dirname(__FILE__)."/classes/PreLiveChecker.Class.php");
+	$vars = array();
+	$obj_config = new Config("d6");
+
+	$sql = "SELECT id, typeid, description, functioncall, expectedvalues, template FROM tbl_prelivechecker WHERE isactive = 1 ORDER BY sequence;";
+
+	$rs = $obj_config::getResultset($sql);
+	while($row = $obj_config::getRow($rs)){
+		$recvdcounts = 'NA';
+		$recvdvalue = PreLiveChecker::{$row->functioncall}();
+		if($row->template != 'direct'){
+			$recvdcounts = (is_array($recvdvalue) ? count($recvdvalue) : 'NA');
+			if($recvdcounts > 0){
+				$template_path = drupal_get_path('module', 'CNX_Live_Checker') .
+"/templates/";
+				$recvdvalue = TemplateHandler::applyTemplateFile($template_path,$row->template.'.tpl.php',$recvdvalue);
+			}else{
+				$recvdvalue = '-';
+			}
+		}
+		$vars['checks'][$row->id] = array(
+			"typeid" => $row->typeid,
+			"description" => $row->description,
+			"expected" => $row->expectedvalues,
+			"value" => $recvdvalue,
+			"counts" => $recvdcounts
+		);
+	}
+	// debug($vars);
+	$template_path = drupal_get_path('module', 'CNX_Live_Checker')."/templates/";
+	$contents = TemplateHandler::applyTemplateFile($template_path,'checksreview.tpl.php',$vars);
+	return $contents;
+}
+
+function checkerSettings(){
+	global $base_url;
+	$path = $base_url.'/settings';
+	$elemwidth = "width: 150px;";
+
+	$form['ZONE_FILL_LAYER_NAME'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Zone fill layer name(s) from the base SVG'),
+		'#default_value' => variable_get('ZONE_FILL_LAYER_NAME', ''),
+		'#description'=>'Provide zone fill layer name(s) separated by commas. This will help identify the SVG layer(s) from the base SVG file.',
+	);
+
+	$form['ZONE_NAME_LAYER_NAME'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Zone layer name(s) from the base SVG'),
+		'#default_value' => variable_get('ZONE_NAME_LAYER_NAME', ''),
+		'#description'=>'Provide zone layer name(s) separated by commas. This will help identify the zone names from the base SVG file.',
+	);
+
+	$form['LAYER_TYPE_ALLOWED'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Provide keys of dynamic layers to be picked up for scan and find'),
+		'#default_value' => variable_get('LAYER_TYPE_ALLOWED', ''),
+		'#description'=>'Provide key(s) separated by commas. SVG objects related to these keys will be picked up and sent for scan and find.',
+	);
+
+	$form['IFP_BACK'] = array(
+		'#type' => 'item',
+		'#value' => "<a href=$path class='form-submit'>Back</a>",
+		'#weight' => 30,
+	);
+
+	return system_settings_form($form);
+}

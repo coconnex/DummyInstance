@@ -1,0 +1,85 @@
+<?php
+//echo dirname(dirname(__FILE__)) . "/Classes/Coconnex/DBFactory/Db.Class.php";;exit;
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/DBFactory/Db.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Config/Config.Class.php");
+
+use Coconnex\API\IFPSS\Exhibitor\Managers\CNXExhibitorManager;
+use Coconnex\Utils\Handlers\TemplateHandler;
+use Coconnex\DBFactory\Db;
+use Coconnex\Utils\Config\Config;
+
+function CNX_First_Time_Login_menu()
+{
+    $items['welcome'] = array(
+        'title' => t('Welcome'),
+        'page callback' => 'CNX_First_Time_Login_welcome',
+        'access arguments' => array('Access First_Time_Login')
+    );
+
+    return $items;
+}
+
+function CNX_First_Time_Login_perm()
+{
+    return array('Access First_Time_Login');
+}
+
+
+function CNX_First_Time_Login_welcome(){
+
+    global $user;
+    $vars = array();
+
+    $user_id = $user->uid;
+    $exhibitor_data = new CNXExhibitorManager(0,$user_id);
+    $exhibitorProfileStatus = $exhibitor_data->getExhibitorProfileStatus();
+
+    if($exhibitorProfileStatus === false){
+		drupal_goto('/profile/compulsory');
+	}
+
+    $exlogcount = CNX_First_Time_Login_login_attempt_count($user_id);
+    if($exlogcount==0){
+        CNX_First_Time_Login_insert_user_login($user_id);
+    }
+    $obj_config = new Config("d6");
+    $customer_nid = $exhibitor_data->exhibitor->external_ref_id;
+    $vars['company_name'] = $exhibitor_data->exhibitor->company_name;
+    $vars['site_name'] = $obj_config::getvar("site_name");
+    $vars['ops_team_name'] = $obj_config::getvar("ORG_OPS_TEAM_NAME");
+
+    $fileName = "welcome_page.tpl.php";
+    $templatPath = drupal_get_path('module', 'CNX_First_Time_Login') . "/templates/";
+    return TemplateHandler::applyTemplateFile($templatPath, $fileName, $vars);
+}
+
+function CNX_First_Time_Login_login_attempt_count($user_id)
+{
+    $exlogcnt = 0;
+    $db = new Db();
+    $sql = "SELECT
+                COUNT(*) AS exlogcnt FROM cnx_first_time_login
+                WHERE user_id=$user_id;";
+    $result = $db->RetrieveRecord($sql);
+    if($result){
+        $exlogcnt = $result[0]['exlogcnt'];
+    }
+    return $exlogcnt;
+}
+
+function CNX_First_Time_Login_insert_user_login($user_id)
+{
+    global $user;
+    if($user_id==''){
+        $uid=$user->uid;
+    }
+    else{
+        $uid=$user_id;
+    }
+    $exlogcount = CNX_First_Time_Login_login_attempt_count($uid);
+    $datetime = date('Y-m-d H:i:s');
+    if($exlogcount==0){
+       $result = db_query("insert into cnx_first_time_login (user_id,count,created_on,created_by) values('".$user_id."',1,'".$datetime."','".$user_id."')");
+    }
+
+}

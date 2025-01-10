@@ -1,0 +1,4 @@
+name = CNX Cart
+description = Cart module for manage cart functionalities.
+core = 6.x
+package = COCONNEX custom modules

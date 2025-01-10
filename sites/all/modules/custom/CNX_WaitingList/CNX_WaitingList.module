@@ -1,0 +1,68 @@
+<?php
+use Coconnex\API\IFPSS\WaitingList\WaitingListItem\Managers\WaitingListItemManager;
+use Coconnex\API\IFPSS\WaitingList\WaitingListItem\Models\RequestModels\WaitinglistItemRequestModel;
+use Coconnex\API\IFPSS\Exhibitor\Managers\CNXExhibitorManager;
+
+
+function CNX_WaitingList_menu() {
+
+	$items['waitinglist/save'] = array(
+		'title' => t('Request'),
+		'page callback' => 'waitinglist_save',
+		'access arguments' => array('Access Waiting List Ajax Calls')
+		);
+	return $items;
+}
+
+
+function CNX_WaitingList_perm(){
+	return array('Access Waiting List Ajax Calls');
+}
+
+function waitinglist_save(){
+
+	require_once dirname(dirname(__FILE__))."/Classes/Coconnex/API/IFPSS/WaitingList/WaitingListItem/Models/RequestModels/WaitinglistItemRequestModel.Class.php";
+	require_once dirname(dirname(__FILE__))."/Classes/Coconnex/API/IFPSS/WaitingList/WaitingListItem/Managers/WaitingListItemManager.Class.php";
+	require_once dirname(dirname(__FILE__))."/Classes/Coconnex/API/IFPSS/Exhibitor/Managers/CNXExhibitorManager.Class.php";
+
+	$response = array();
+	$data = file_get_contents('php://input');
+
+	global $user;
+
+	if(trim($data) !== ''){
+
+		$data = json_decode($data);
+		$customer_id = 0;
+		if($user->uid > 0){
+			$cnx_exhib_mgr = new CNXExhibitorManager(0,$user->uid);
+			$customer_id = $cnx_exhib_mgr->exhibitor->external_ref_id;
+		}
+		$obj_wait_req = new WaitinglistItemRequestModel();
+		$obj_wait_req->stand_ref_id = $data->stand_ref;
+		$obj_wait_req->customer_id = $customer_id;
+
+		$arr_addn_info = array();
+		$arr_addn_info['product_key'] = $data->product_key;
+		$arr_addn_info['product_name'] = $data->product_name;
+		$arr_addn_info['description'] = $data->description;
+		$arr_addn_info['stand_no'] = $data->stand_no;
+		$arr_addn_info['rate'] = $data->rate;
+		$arr_addn_info['quantity'] = $data->quantity;
+		$arr_addn_info['total'] = $data->total;
+
+		$obj_wait_req->additional_info = $arr_addn_info;
+		// debug($obj_wait_req);
+		$obj_wait_mgr = new WaitingListItemManager($user->uid, $user->roles, $obj_wait_req);
+		$result = $obj_wait_mgr->save_waitinglist_item();
+		// debug($result,1);
+		$response['status'] = $result;
+		$response['message'] = 'Stand added to waiting list';
+
+	}else{
+		$response['status'] = 0;
+		$response['message'] = 'Error processing data';
+	}
+	echo json_encode($response);
+}
+

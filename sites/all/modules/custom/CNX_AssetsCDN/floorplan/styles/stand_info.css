@@ -1,0 +1,38 @@
+.legend {
+    border-radius: 30px;
+    padding: 6px 15px;
+    margin-left: 25px;
+    font-size: 14px;
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+    margin-bottom: 15px !important;
+    box-shadow: 2px 2px 4px #0000004d;
+}
+
+#fp_toolbar_info_modal,
+.legend,
+.legend span,
+.legend_item_count {
+    font-family: "Roboto" !important;
+}
+
+.legend-flex {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.legends-container {
+    background-color: #ececec;
+    border-radius: 5px;
+    margin-bottom: 30px;
+    padding: 15px;
+}
+
+.legend-group-title {
+    font-weight: 401;
+}
+
+#fp_toolbar_info_modal{
+    z-index: 5500;
+}

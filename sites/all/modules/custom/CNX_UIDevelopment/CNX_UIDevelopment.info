@@ -1,0 +1,4 @@
+name = CNX User Interface Development Module
+description = This module is to be used by HTML/CSS/JS developers to develop screen design templates
+core = 6.x
+package = COCONNEX Development Modules (Not for production environments)

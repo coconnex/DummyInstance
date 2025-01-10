@@ -1,0 +1,4 @@
+name = CNX Exhibitor
+description = Coconnex exhibitor module is used for the get exhibitor data.
+core = 6.x
+package = COCONNEX custom modules

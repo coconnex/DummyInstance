@@ -1,0 +1,38 @@
+<?php
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Handlers/TemplateHandler.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/OTP/OTPManager.Class.php");
+
+use Coconnex\API\IFPSS\OTP\OTPManager;
+use Coconnex\Utils\Handlers\TemplateHandler;
+
+function CNX_Otp_menu()
+{
+
+    $items['otp/generate'] = array(
+        'title' => t('Otp Data'),
+        'page callback' => 'generateOtp',
+        'access arguments' => array('Access Otp Request')
+    );
+    $items['otp/verify'] = array(
+        'title' => t('Otp Data'),
+        'page callback' => 'verifyOtp',
+        'access arguments' => array('Access Otp Request')
+    );
+    return $items;
+}
+
+function CNX_Otp_perm()
+{
+    return array('Access Otp Request');
+}
+
+function generateOtp()
+{
+    $otp_mgr = new OTPManager();
+    $otp_mgr->generate();
+}
+function verifyOtp()
+{
+    $otp_mgr = new OTPManager();
+    $otp_mgr->verify();
+}

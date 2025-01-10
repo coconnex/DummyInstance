@@ -1,0 +1,512 @@
+<?php
+
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/StandTransaction/Managers/StandTransactionManager.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/WaitingList/WaitingListItem/Managers/WaitingListItemManager.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/StandTransaction/Collection/ExhibStandTransactions.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/WaitingList/Collection/WaitingList.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Utils/Handlers/TemplateHandler.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Integrations/Coconnex/BackendAPIClient/Packages/Managers/PackageListManager.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/Integrations/Coconnex/BackendAPIClient/Order/Managers/APIOrderManager.Class.php");
+require_once(dirname(dirname(__FILE__)) . "/Classes/Coconnex/API/IFPSS/BookingHistory/Managers/BookingHistoryManager.Class.php");
+require_once(dirname(__FILE__) . "/config/action_settings.php");
+
+use Coconnex\API\IFPSS\BookingHistory\Managers\BookingHistoryManager;
+use Coconnex\API\IFPSS\Exhibitor\Managers\CNXExhibitorManager;
+use Coconnex\API\IFPSS\StandTransaction\Actions\StandTransactionActionController;
+use Coconnex\API\IFPSS\StandTransaction\Collection\ExhibStandTransactions;
+use Coconnex\API\IFPSS\StandTransaction\Managers\StandTransactionManager;
+use Coconnex\API\IFPSS\StandTransaction\Models\RequestModels\StandTransactionRequestModel;
+use Coconnex\API\IFPSS\WaitingList\Collection\WaitingList;
+use Coconnex\API\IFPSS\WaitingList\WaitingListItem\Managers\WaitingListItemManager;
+use Coconnex\API\IFPSS\WaitingList\WaitingListItem\Models\RequestModels\WaitinglistItemRequestModel;
+use Coconnex\DBFactory\Db;
+use Coconnex\Integrations\Coconnex\BackendAPIClient\Packages\Managers\PackageListManager;
+use Coconnex\Integrations\Coconnex\BackendAPIClient\Order\Managers\APIOrderManager;
+use Coconnex\Integrations\Coconnex\BackendAPIClient\StandTransactions\Managers\ReserveManager;
+use Coconnex\Utils\Config\Config;
+use Coconnex\Utils\Handlers\TemplateHandler;
+
+
+/**
+ * @file CNX_Transactions.module
+ *
+ * For manage stand transactions.
+ */
+function CNX_Transactions_menu()
+{
+    $items['mystands'] = array(
+        'title' => t('My Stands'),
+        'page callback' => 'CNX_Transactions_mystands',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('Access Stand Transactions'),
+    );
+
+    $items['mystands/action'] = array(
+        'title' => t('My Stands'),
+        'page callback' => 'CNX_Transactions_mystands_actions',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('Access Stand Transactions'),
+    );
+
+    $items['transaction/update'] = array(
+        'title' => t('Transaction Update'),
+        'page callback' => 'CNX_Transactions_update',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('Access Stand Transactions'),
+    );
+
+    $items['contract/submit'] = array(
+        'title' => t('Contract Submit'),
+        'page callback' => 'contract_submit',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('Access Stand Transactions'),
+    );
+
+
+    $items['cron'] = array(
+        'title' => t('Cron'),
+        'page callback' => 'CNX_Transactions_cron',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('Access Stand Transactions'),
+    );
+
+    $items['test'] = array(
+        'title' => t('My Stands'),
+        'page callback' => 'test',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('Access Stand Transactions'),
+    );
+
+    return $items;
+}
+
+function CNX_Transactions_perm()
+{
+    return array('Access Stand Transactions');
+}
+
+
+function CNX_Transactions_update()
+{
+    global $user;
+    $postData = json_decode(file_get_contents('php://input'));
+
+    if (isset($postData)) {
+        $stand_transaction_obj = new StandTransactionRequestModel();
+
+        $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $postData->transaction_id);
+        $stand_transaction = $stand_transaction_manager->get_stand_transaction();
+        $additional_info = $stand_transaction->additional_info;
+
+        $stand_transaction_obj->stand_transaction_id = $postData->transaction_id;
+        $stand_transaction_obj->product_key = $postData->package_key;
+        $stand_transaction_obj->product_name = $postData->description;
+        $stand_transaction_obj->description = $postData->description;
+        $stand_transaction_obj->rate = $postData->rate;
+        $stand_transaction_obj->quantity = $postData->quantity;
+        $stand_transaction_obj->total = $postData->total;
+        $stand_transaction_obj->additional_info = array("stand_no" => $additional_info->stand_no,"stand_height" => $additional_info->stand_height,"stand_opensides" => $additional_info->stand_opensides,"product_ref" => $postData->product_ref);
+
+        $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_obj);
+        $stand_transaction_manager->save_stand_transaction();
+    }
+    $response = array('status' => 200, 'message' => 'Package updated successfully.');
+    echo json_encode($response);
+}
+
+function CNX_Transactions_mystands()
+{
+    global $user;
+    $exhibitor_data = new CNXExhibitorManager(0,$user->uid);
+	$exhibitorProfileStatus = $exhibitor_data->getExhibitorProfileStatus();
+    if($exhibitorProfileStatus === false){
+		drupal_goto('/profile/compulsory');
+	}else{
+        $vars = array();
+        $exhibitor_data = new CNXExhibitorManager(0,$user->uid);
+        $customer_id = $exhibitor_data->exhibitor->external_ref_id;
+        $is_validated = $exhibitor_data->exhibitor->is_validated;
+        $status = "";
+        $template_base_path = drupal_get_path('module', 'CNX_Transactions') . "/templates/";
+        $row_template_path = $template_base_path . "my_stands_row_cols3.tpl.php";
+        switch (trim(strtoupper(arg(1)))) {
+            case 'RESERVED':
+                $status = "RESERVED";
+                break;
+            case 'BOOKED':
+                $status = "BOOKED";
+                break;
+            case 'CANCELLED':
+                $status = "CANCELLED";
+                break;
+            case 'WAITLISTED':
+                $status = "WAITLISTED";
+                break;
+            default:
+                $status = "RESERVED";
+                break;
+        }
+        $vars['status'] = $status;
+        $vars['template_base_path'] = $template_base_path;
+        $vars['row_template_path'] = $row_template_path;
+        $vars['is_validated'] =  $is_validated;
+        $waiting_list_obj = new WaitingList($user->uid,$user->roles, $customer_id);
+        // debug($waiting_list_obj,1);
+        $transactions_obj = new ExhibStandTransactions($user->uid,$user->roles, $customer_id, $status);
+
+        $booked_transaction_id = get_booked_transaction_id($transactions_obj);
+        $vars['row_counts'] = array_merge($transactions_obj->counts_by_status, array('WAITLISTED' => count($waiting_list_obj->waiting_list)));
+
+        if ($status === "RESERVED") {
+            $package_list = new PackageListManager($customer_id);
+            $vars['products'] = $package_list->get();
+        }
+        if ($status === "WAITLISTED") {
+            $vars['waiting_list'] = $waiting_list_obj;
+        } else {
+            $vars['transactions'] = $transactions_obj;
+        }
+
+        $outHTML = TemplateHandler::applyTemplateFile(drupal_get_path('module', 'CNX_Transactions') . "/templates/", 'my_stands_tabs.tpl.php', $vars);
+        // echo $outHTML; die;
+        return $outHTML;
+    }
+}
+
+function get_booked_transaction_id($transactions_obj){
+    foreach($transactions_obj->exhib_stand_transactions as $trnaj_obj){
+        if($transactions_obj->status = 'BOOKED' && $trnaj_obj->status == 'CONTRACT_SUBMITTED'){
+            return $trnaj_obj->external_ref_id;
+        }
+    }
+
+}
+function CNX_Transactions_mystands_actions(){
+    global $user;
+    $data = array();
+    $action_key = arg(2);
+
+    $user_info = user_load($user->uid);
+    // debug($user_info,1);
+    $data['updated_by'] = $user_info->profile_first_name.' '.$user_info->profile_last_name;
+    $postData = json_decode(file_get_contents('php://input'));
+
+    $stand_transaction_id = $postData->transaction_id;
+    $data['cancellation_reason'] = $postData->cancellation_reason;
+    $data['invitation_mail'] = $postData->invitation_mail;
+    $data['invitation_name'] = $postData->invitation_name;
+    $data['resend_invitation_email'] = $postData->resend_invitation_email;
+    $data['inv_id'] = $postData->inv_id;
+    $data['order_id'] = $postData->order_id;
+    $data['doc_type'] = $postData->doc_type;
+
+    //'Test cancel reason dsfsdfgsdgdsg';//'Reason:' . Chr(10) . 'Test cancel reason dsfsdfgsdgdsg';//'Reason: ' . Chr(10) . $postData->cancellation_reason;
+    // $stand_transaction_id = arg(3);
+
+    // $action_controller = new StandTransactionActionController();
+    // $response = $action_controller::do_action($action_key,$stand_transaction_id,$user,$data);
+    // echo $response;
+    // die;
+
+    if (isset($postData)) {
+        if ($stand_transaction_id > 0) {
+            $action_controller = new StandTransactionActionController();
+            $response = $action_controller::do_action($action_key,$stand_transaction_id,$user,$data);
+            // echo "<pre>";print_r($response);die;
+        }else{
+            $response = array("response_action" => 'show_msg',"response_msg" => 'Transaction reference not found');
+            $response = json_encode($response);
+        }
+        echo $response;
+    }else{
+        drupal_goto('/floorplan');
+    }
+}
+
+function get_supplier_details()
+{
+    $sql = "SELECT
+                external_ref_id
+            FROM cnx_suppliers
+            WHERE id = 1
+            AND active = 1";
+
+    $db = new Db();
+    $result = $db->RetrieveRecord($sql);
+
+    return $result;
+}
+
+function contract_submit()
+{
+    global $user;
+
+    $reserved = array();
+
+    if (isset($_POST) && $_POST['fees'] != "") {
+        $fees = json_decode($_POST['fees']);
+        for ($i = 0; $i < count($fees); $i++) {
+            $reserved[] = $fees[$i];
+        }
+    }
+
+    if (isset($_POST) && $_POST['stand_transaction_id'] != "") {
+        for ($i = 0; $i < count($_POST['stand_transaction_id']); $i++) {
+            $stand_transaction_id = $_POST['stand_transaction_id'][$i];
+            $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+            $transaction_data = $stand_transaction_manager->get_stand_transaction();
+            $reserved[] = $transaction_data;
+        }
+    }
+    // debug($reserved);
+
+    $exhibitor_data = new CNXExhibitorManager(0, $user->uid);
+    $customer_id = $exhibitor_data->exhibitor->external_ref_id;
+
+    $supplier_details = get_supplier_details();
+
+    $order_data = array();
+
+    $order_data['customer_id'] = $customer_id;
+    $order_data['user_id'] = $user->uid;
+    $order_data['supplier_id'] = $supplier_details['0']['external_ref_id'];
+
+    if ($reserved) {
+        for ($i = 0; $i < count($reserved); $i++) {
+            $reserved_item = $reserved[$i];
+
+            $order_items = [];
+            $order_items = array(
+                'product_key' => $reserved_item->product_key,
+                'stand_ref_id' => $reserved_item->stand_ref_id,
+                'description' => $reserved_item->description,
+                'quantity' => $reserved_item->quantity,
+                'rate' => $reserved_item->rate,
+                'stand_number' => ($reserved_item->stand_no) ? $reserved_item->stand_no : $reserved_item->additional_info->stand_no,
+                'product_ref' => ($reserved_item->product_ref) ? $reserved_item->product_ref : $reserved_item->additional_info->product_ref,
+                'item_type' => ($reserved_item->item_type) ? $reserved_item->item_type : 'SELFSERVICE'
+            );
+            $order_data['order_items'][] = $order_items;
+        }
+    }
+    // debug($order_data);
+
+    $order = (object)$order_data;
+    // debug($order_data);
+    // debug(json_encode($order_data));
+    $apiorder_mgr = new APIOrderManager($order);
+    $order_response = json_decode($apiorder_mgr->order_response, true);
+    // debug($order_response,1);
+    if ($order_response['status']) {
+        //Update in Stand Transaction
+        $order_id = $order_response['data']['order_id'];
+        $user_info = user_load($user->uid);
+
+        if ($reserved) {
+            for ($i = 0; $i < count($reserved); $i++) {
+                $reserved_item = $reserved[$i];
+                if($reserved_item->stand_ref_id > 0){
+                    $stand_transaction_id = $reserved_item->stand_transaction_id;
+                    $updated_by = $user_info->profile_first_name.' '.$user_info->profile_last_name;
+                    $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+                    $stand_transaction_manager->contract_submit_transaction($updated_by,$order_id);
+
+                    //ADD IN BOOKING HISTORY - 21-03-2024
+
+                    $action = "CONTRACT_SUBMITTED";
+                    $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+                    $stand_transaction_manager->add_booking_history($action,$updated_by);
+                }
+            }
+        }
+
+        $contract_sign_link = $order_response['data']['link'];
+        drupal_goto($contract_sign_link);
+    } else {
+        $message = $order_response['msg'];
+        drupal_set_message($message, 'error');
+    }
+}
+
+function CNX_Transactions_cron()
+{
+    global $user;
+    $obj_config = new Config("d6");
+    $is_graceperiod_active = $obj_config::getvar("IS_GRACEPERIOD");
+    $grace_period_config = $obj_config::get_grace_period_config();
+
+    if ($is_graceperiod_active == 1 && $grace_period_config['RESERVED']['is_grace_period_active'] == 'YES') {
+        $current_time = strtotime(date('Y-m-d H:i:s'));
+        $non_contracted_stands = db_query("SELECT id,stand_ref_id,customer_id,reserved_grace_minutes,signing_grace_minutes,reserved_on,contract_submitted_on,status FROM cnx_stand_transaction WHERE STATUS IN ('RESERVED','CONTRACT_SUBMITTED') AND deleted=%d ORDER BY id ASC", 0);
+
+        $numrows = mysql_num_rows($non_contracted_stands);
+        if ($numrows > 0) {
+            while ($non_contracted_stand_row = db_fetch_object($non_contracted_stands)) {
+
+                $reserve_expiry_check = false;
+                $signing_expiry_check = false;
+                $stand_transaction_id = $non_contracted_stand_row->id;
+                $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+                $stand_transaction = $stand_transaction_manager->get_stand_transaction();
+                $reserved_on = $stand_transaction->reserved_on;
+                $reserved_grace_minutes = $stand_transaction->reserved_grace_minutes;
+                $contract_submitted_on = $stand_transaction->contract_submitted_on;
+                $signing_grace_minutes = $stand_transaction->signing_grace_minutes;
+                $status = $stand_transaction->status;
+
+                if ($status == 'RESERVED') {
+                    $reserved_date = strtotime($reserved_on);
+                    $reserved_expiry = strtotime("+" . $reserved_grace_minutes . " minutes", $reserved_date);
+                    if ($current_time > $reserved_expiry) {
+                        $reserve_expiry_check = true;
+                    }
+                    if ($reserve_expiry_check === true) {
+                        release_reservation($stand_transaction_id);
+                    }
+                } else {
+                    $reserved_date = strtotime($reserved_on);
+                    $reserved_expiry = strtotime("+" . $reserved_grace_minutes . " minutes", $reserved_date);
+
+                    $contract_submitted_date = strtotime($contract_submitted_on);
+                    $signing_expiry = strtotime("+" . $signing_grace_minutes . " minutes", $contract_submitted_date);
+
+                    if ($current_time > $reserved_expiry) {
+                        $reserve_expiry_check = true;
+                    }
+
+                    if ($current_time > $signing_expiry) {
+                        $signing_expiry_check = true;
+                    }
+                    if ($reserve_expiry_check === true || $signing_expiry_check === true) {
+                        release_reservation($stand_transaction_id);
+                    }
+                }
+            }
+        }
+
+    }
+
+    //send email to cohezia admin to check cron is active
+    // $arMail = array();
+    // $arMail['to'] = "cron@cohezia.com";
+    // $arMail['subject'] = "'" . variable_get('SITENAME', '') . "' - Cron call executed successfully";
+    // $arMail['body'] =  "Cron run executed successfully URL - " . $base_url;
+    // @COCONNEX_MailNew($arMail);
+}
+
+function release_reservation($stand_transaction_id)
+{
+    global $user;
+    $exhib_mail = $user->mail;
+    $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+    $release_response = $stand_transaction_manager->release_transaction_stand($exhib_mail);
+
+    if ($release_response->status == 1) {
+        $updated_by = 'System';
+        $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+        $stand_transaction_obj = $stand_transaction_manager->get_stand_transaction();
+        $stand_ref_id = $stand_transaction_obj->stand_ref_id;
+        $stand_transaction_manager->cancel_transaction($updated_by,$stand_ref_id);
+
+        //ADD IN BOOKING HISTORY - 21-03-2024
+        $action = "CANCELLED";
+        $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+        $stand_transaction_manager->add_booking_history($action,$updated_by);
+
+        // $delete_arr = array();
+        // $delete_arr['table'] = 'cnx_stands_taken';
+        // $delete_arr['conditions'] = ' stand_ref_id = ' . $stand_ref_id;
+        // $db = new Db();
+        // $db->DeleteRecord($delete_arr);
+
+        $waitlist_mgr = new WaitingList($user->uid, $user->roles,'',$stand_ref_id);
+        $waitlist_obj = $waitlist_mgr->get_first_waitlist_exhibitor();
+        $first_waitlist_customer_id = $waitlist_obj->customer_id;
+        // /debug($first_waitlist_customer_id);
+        if($first_waitlist_customer_id != "" && $first_waitlist_customer_id > 0){
+                $waitlist_mgr = new WaitingList($user->uid, $user->roles,'',$stand_ref_id);
+                $first_waitlist_user_id = $waitlist_mgr->get_first_waitlist_user($first_waitlist_customer_id);
+                // debug($first_waitlist_user_id);
+                if($first_waitlist_user_id != "" && $first_waitlist_user_id > 0){
+                    $exhibitor = new CNXExhibitorManager(0,$first_waitlist_user_id);
+                    $exhibCompanyName = $exhibitor->exhibitor->company_name;
+
+                    $exhib_arr = array("exhib_nid" => $first_waitlist_customer_id,"exhib_name" => $exhibCompanyName, "exhib_mail" => $user->mail);
+                    $exhib_obj = (object)$exhib_arr;
+                    // debug($exhib_arr);
+                    $stand_arr = array(
+                                    "stand_number" => $waitlist_obj->additional_info->stand_no,
+                                    "stand_nid" => $waitlist_obj->stand_ref_id,
+                                    "stand_area" => $waitlist_obj->additional_info->quantity,
+                                    "stand_type" => $waitlist_obj->additional_info->product_key
+                                );
+
+                    $stand_obj = (object)$stand_arr;
+                    // debug($stand_arr);
+                    $ReserveManager = new ReserveManager($stand_obj,$exhib_obj);
+                    $reserve_response = json_decode($ReserveManager->reserve_response,true);
+                    // $reserve_response['status'] = true;
+                    if($reserve_response['status']){
+                        // debug('reserve_response');
+                        $user_info = user_load($first_waitlist_user_id);
+                        $stand_transaction = new StandTransactionRequestModel();
+
+                        $stand_transaction->stand_transaction_id = '';
+                        $stand_transaction->customer_id = $waitlist_obj->customer_id;
+                        $stand_transaction->stand_ref_id = $waitlist_obj->stand_ref_id;
+                        $stand_transaction->product_key = $waitlist_obj->additional_info->product_key;
+                        $stand_transaction->product_name = $waitlist_obj->additional_info->product_name;
+                        $stand_transaction->description = $waitlist_obj->additional_info->description;
+                        $stand_transaction->additional_info = $stand_transaction_obj->additional_info;
+                        $stand_transaction->quantity = $waitlist_obj->additional_info->quantity;
+                        $stand_transaction->rate = $waitlist_obj->additional_info->rate;
+                        $stand_transaction->total = $waitlist_obj->additional_info->total;
+                        $stand_transaction->reserved_grace_minutes = 10080;
+                        $stand_transaction->pricing_data = '';
+                        $stand_transaction->status = 'RESERVED';
+                        $stand_transaction->notes = '';
+                        $stand_transaction->reserved_on = date('Y-m-d H:i:s');
+                        $stand_transaction->reserved_by = $user_info->profile_first_name . ' ' . $user_info->profile_last_name;
+
+                        // debug($stand_transaction,1);
+                        $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction);
+                        $stand_transaction_manager->save_stand_transaction();
+
+                        //ADD IN BOOKING HISTORY - 21-03-2024
+
+                        $action = "RESERVED";
+                        $stand_transaction_id = $stand_transaction_manager->stand_transaction->id;
+                        $stand_transaction_manager = new StandTransactionManager($user->uid, $user->roles, $stand_transaction_id);
+                        $stand_transaction_manager->add_booking_history($action,$stand_transaction->reserved_by);
+
+                        $waiting_list_item_manager = new WaitingListItemManager($user->uid, $user->roles,$waitlist_obj->waiting_list_item_id);
+                        $waiting_list_item_manager->remove();
+
+                        $waitlist_mgr = new WaitingList($user->uid, $user->roles,'',$stand_ref_id);
+                        $waitlist_mgr->update_waitinglist_item_sequence();
+                    }else{
+                        $msg = 'Waiting list user not found';
+                    }
+                }
+            }else{
+                $msg = 'Waiting list exhibitor not found';
+            }
+    } else {
+        $message = $release_response['msg'];
+        // drupal_set_message($message,'error');
+        // drupal_goto("standcart/reservedstandstatus");
+        return false;
+    }
+}
+
+function test(){
+    echo 'test';
+    global $user;
+    $waiting_list_item_id = 4;
+    $stand_ref_id = 767561;
+    $waiting_list_item_manager = new WaitingListItemManager($user->uid, $user->roles,$waiting_list_item_id);
+    $waiting_list_item_manager->remove();
+
+    $waiting_list = new WaitingList($user->uid, $user->roles, '',$stand_ref_id);
+    $waiting_list->update_waitinglist_item_sequence();
+}

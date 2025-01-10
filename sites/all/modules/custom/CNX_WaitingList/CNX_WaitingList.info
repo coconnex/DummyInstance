@@ -1,0 +1,6 @@
+; $Id$
+name = CNX Waiting List
+description = Coconnex module to manage waiting list exhibitors.
+package = COCONNEX custom modules
+core = 6.x
+

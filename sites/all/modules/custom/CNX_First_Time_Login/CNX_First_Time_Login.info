@@ -1,0 +1,4 @@
+name = CNX First Time Login
+description = Coconnex module to manage first time login.
+package = COCONNEX custom modules
+core = 6.x

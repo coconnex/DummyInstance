@@ -1,0 +1,127 @@
+
+
+  div.success, /* Important messages (status, warning, and error) for the user */
+  div.message,
+  div.info,
+  div.error
+  {
+    background-position: 10px 10px;
+    background-repeat: no-repeat;
+    border-radius: 5px;
+    /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px rgba(255, 255, 255, 0.4) inset; */
+    float: left;
+    font-size: 1em;
+    /* margin: 0 1em 5px; */
+    padding: 18px 5px 18px 35px;
+    vertical-align: -webkit-baseline-middle;
+    width: 100%;
+    z-index:9;
+    position: absolute;
+
+  }
+ .messages{
+   margin: 2px 0px;
+
+  /*changes done by RB 2/11/23 */
+   /* background-color: #def1f7; */
+    color: #1c657d;
+    --mdb-alert-border-color : transparent;
+    --mdb-alert-padding-x: 1.5rem;
+    --mdb-alert-padding-y: 1.25rem;
+    --mdb-alert-margin-bottom: 1rem;
+    --mdb-alert-border: 1px solid var(--mdb-alert-border-color);
+    --mdb-alert-border-radius: 0.5rem;
+    position: relative;
+    padding: var(--mdb-alert-padding-y) var(--mdb-alert-padding-x);
+    border-radius: var(--mdb-alert-border-radius);
+ }
+div.message
+  {background-color: #fae7a2;
+	background-image: url(../images/warning.png);
+	  border: 1px solid #f5c558;
+  }
+   div.success /* Normal priority messages */
+  { background-color: #d2f7ad;
+	background-image: url(../images/tick.png);
+	 border: 1px solid #aedb2e;
+  }
+  div.info /* Medium priority messages */
+  {
+    /* border-color: #a4c8f5; */
+    background-image: url(../images/info1.png);
+  }
+
+  div.info,
+  tr.info
+  {
+    color: #000;
+	  /* background-color: #cfe6fc;
+	  border: 1px solid #a4c8f5; */
+  }
+
+  div.error /* High priority messages. See also the .error declaration below. */
+  {
+    border-color: #f8b472;
+    background-image: url(../images/delete.png);
+  }
+ #coconnex_messages{
+  /* width: 60%; */
+  width: 100%;
+  margin: auto;
+ }
+  div.error,
+  tr.error
+  {
+    color: #000; /* Drupal core uses #200 */
+    /* background-color: #ffd5af;
+	  border: 1px solid #f8b472; */
+    width: 60%;
+  }
+
+  div.message ul
+  {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+.msgclose {
+   cursor: pointer;
+	  opacity: 0.79;
+	  float:right;
+	   top: -3px;
+	  margin:0px !important;
+}
+
+div.message > div:first-child {
+    float: left;
+    width: 88%;
+    text-align: center;
+}
+div.messages > ul > li{
+  list-style: none;
+}
+/* div.messages > ul > li:first-child{
+    color: #b03d50;
+    background: #fae4e8;
+    padding: 10px;
+    border-radius: 6px;
+    width: 50%;
+    margin: 4% 0% 2% 57%;
+}
+div.messages > ul > li:last-child{
+    color: #b03d50;
+    background: #fae4e8;
+    padding: 10px;
+    border-radius: 6px;
+    width: 50%;
+    margin-left: 57%;
+} */
+@media (min-width: 320px) and (max-width: 360px) {
+	#coconnex_messages {
+    margin-left: -3%;
+	}
+	}
+@media (min-width: 480px) and (max-width: 640px) {
+	#coconnex_messages {
+    margin-left: 2%;
+	}
+}

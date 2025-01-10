@@ -1,0 +1,4 @@
+name = CNX Assets Assertion Module
+description = This module is to be used to serve assets (Stylesheets, Javascript Files, Images etc )
+core = 6.x
+package = COCONNEX Custom Modules

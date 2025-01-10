@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'Beausite Grand Medium';
+    src: url('../fonts/BeausiteGrandWeb-Medium.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Beausite Grand Regular';
+    src: url('../fonts/BeausiteGrandWeb-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+}
