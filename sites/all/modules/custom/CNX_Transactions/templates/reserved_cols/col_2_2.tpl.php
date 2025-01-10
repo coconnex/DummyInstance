@@ -1,2 +1,0 @@
- <p class="mystand_card_value"> Price (Ex.VAT)​</p>
- <p class="mystand_card_value"><strong>£<span id="reserved_total<?php echo $row->stand_transaction_id; ?>"><?php echo number_format($row->total); ?> </strong></span>​</p>

@@ -1,4 +1,0 @@
-name = CNX Transactions
-description = Used to manage stand transactions.
-core = 6.x
-package = COCONNEX custom modules

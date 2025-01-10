@@ -1,6 +1,0 @@
-; $Id$
-name = CNX Booking History
-description = Coconnex module to manage Booking History.
-package = COCONNEX custom modules
-core = 6.x
-

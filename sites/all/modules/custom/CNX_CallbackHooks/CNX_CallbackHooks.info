@@ -1,4 +1,0 @@
-name = CNX CallbackHooks
-description = CallbackHooks module for manage call from other enviorments.
-core = 6.x
-package = COCONNEX custom modules

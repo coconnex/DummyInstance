@@ -1,4 +1,0 @@
-name = CNX OTP
-description = Coconnex otp module is used for send otp.
-core = 6.x
-package = COCONNEX custom modules

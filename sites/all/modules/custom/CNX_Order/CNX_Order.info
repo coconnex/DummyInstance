@@ -1,6 +1,0 @@
-
-name = CNX Order
-description = Coconnex module to manage order list exhibitors.
-package = COCONNEX custom modules
-core = 6.x
-

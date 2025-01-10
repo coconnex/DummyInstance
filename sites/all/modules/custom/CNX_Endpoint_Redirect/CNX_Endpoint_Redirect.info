@@ -1,4 +1,0 @@
-name = CNX Endpoint Redirect
-description = Coconnex module to manage redirection of exhibitor after login.
-package = COCONNEX custom modules
-core = 6.x

@@ -1,9 +1,0 @@
-name = Redirect 403 to User Login
-description = Redirect anonymous users from 403 Access Denied pages to the /user/login page.
-core = 6.x
-; Information added by Drupal.org packaging script on 2014-08-11
-version = "6.x-1.6"
-core = "6.x"
-project = "r4032login"
-datestamp = "1407782028"
-

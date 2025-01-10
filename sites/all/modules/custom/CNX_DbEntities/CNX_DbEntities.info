@@ -1,4 +1,0 @@
-name = CNX Db Entities Generator Module
-description = This module is used to generate database entity models for MySql & D6
-core = 6.x
-package = COCONNEX Custom Modules

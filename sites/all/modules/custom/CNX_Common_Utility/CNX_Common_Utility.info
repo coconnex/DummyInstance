@@ -1,4 +1,0 @@
-name = CNX Common Utility
-description = Coconnex common utility module necessary for the rest of the CNX modules.
-core = 6.x
-package = COCONNEX custom modules

@@ -1,2 +1,0 @@
- <p class="mystand_card_value"><?php echo $row->additional_info->description; ?></p>
- <p class="mystand_card_value">​Rate £<?php echo number_format($row->additional_info->total / $row->additional_info->quantity); ?> / M<sup>2</sup></p>
