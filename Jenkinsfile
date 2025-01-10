@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        staging_server = "3.9.225.94"  // Remote server IP
+        staging_server = "3.9.225.94"  
     }
     stages {
         stage('Deploy to Remote') {
@@ -16,7 +16,7 @@ pipeline {
                         def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
 
                         // Deploy using SCP (make sure to escape the variable)
-                        sh "scp -r ${WORKSPACE}${fil} root@${staging_server}:/var/www/html/cohezia${fil}"
+                        sh "scp -r ${WORKSPACE}${fil} root@${staging_server}:/var/lib/jenkins/workspace/cohezia${fil}"
                     }
                 }
             }
