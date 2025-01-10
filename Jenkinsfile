@@ -8,7 +8,7 @@ pipeline {
             steps {
                 script {
                     // Find files modified in the last 10 minutes
-                    def filesToDeploy = sh(script: 'find ${env.WORKSPACE} -type f -mmin -10 | grep -v ".git" | grep -v "Jenkinsfile"', returnStdout: true).trim().split("\n")
+                    def filesToDeploy = sh(script: "find ${env.WORKSPACE} -type f -mmin -10 | grep -v '.git' | grep -v 'Jenkinsfile'", returnStdout: true).trim().split("\n")
                     
                     // Check if files were found
                     if (filesToDeploy.size() > 0) {
@@ -22,7 +22,10 @@ pipeline {
 
                             // Deploy using SCP
                             try {
-                                sh "scp -r ${WORKSPACE}${fil} root@${staging_server}:${remoteFilePath}"
+                                // Make sure the file paths are correct and that $WORKSPACE is correctly interpolated
+                                sh """
+                                    scp -r ${WORKSPACE}${fil} root@${staging_server}:${remoteFilePath}
+                                """
                                 echo "Successfully deployed: ${fil}"
                             } catch (Exception e) {
                                 echo "Error deploying file: ${fil}"
@@ -37,4 +40,3 @@ pipeline {
         }
     }
 }
-
