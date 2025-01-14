@@ -2,7 +2,6 @@ pipeline {
     agent any
     environment {
         staging_server = "3.9.225.94"  
-        remote_base_dir = "/home2/coheziatest"  // Ensure this is correctly set to your desired remote path
     }
     stages {
         stage('Deploy to Remote') {
@@ -13,21 +12,17 @@ pipeline {
                     
                     // Check if files were found
                     if (filesToDeploy.size() > 0) {
+                        // Deploy each file to the remote server
                         filesToDeploy.each { fileName ->
                             // Clean the file path and remove the job name part
                             def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
-                            
-                            // Debugging: print out the paths being constructed
-                            echo "File to deploy: ${fileName}"
-                            echo "Cleaned file path: ${fil}"
-                            
-                            // Construct the remote file path dynamically
-                            def remoteFilePath = "${remote_base_dir}${fil}"
-                            echo "Remote file path: ${remoteFilePath}"
+
+                            // Ensure file path is properly escaped
+                            def remoteFilePath = "/var/lib/jenkins/workspace/cohezia${fil}"
 
                             // Deploy using SCP
                             try {
-                                // Ensure the local and remote paths are correct
+                                // Make sure the file paths are correct and that $WORKSPACE is correctly interpolated
                                 sh """
                                     scp -r ${WORKSPACE}${fil} root@${staging_server}:${remoteFilePath}
                                 """
