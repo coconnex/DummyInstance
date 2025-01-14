@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         staging_server = "3.9.225.94"  
-        remote_base_dir = "/home2/coheziatest"  // Set the desired remote base directory here
+        remote_base_dir = "/home2/coheziatest"  // Ensure this is correctly set to your desired remote path
     }
     stages {
         stage('Deploy to Remote') {
@@ -13,17 +13,21 @@ pipeline {
                     
                     // Check if files were found
                     if (filesToDeploy.size() > 0) {
-                        // Deploy each file to the remote server
                         filesToDeploy.each { fileName ->
                             // Clean the file path and remove the job name part
                             def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
-
-                            // Construct the full remote file path using the new remote base directory
+                            
+                            // Debugging: print out the paths being constructed
+                            echo "File to deploy: ${fileName}"
+                            echo "Cleaned file path: ${fil}"
+                            
+                            // Construct the remote file path dynamically
                             def remoteFilePath = "${remote_base_dir}${fil}"
+                            echo "Remote file path: ${remoteFilePath}"
 
                             // Deploy using SCP
                             try {
-                                // Make sure the file paths are correct and that $WORKSPACE is correctly interpolated
+                                // Ensure the local and remote paths are correct
                                 sh """
                                     scp -r ${WORKSPACE}${fil} root@${staging_server}:${remoteFilePath}
                                 """
