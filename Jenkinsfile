@@ -18,7 +18,7 @@ pipeline {
                             def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
 
                             // Ensure file path is properly escaped
-                            def remoteFilePath = "/var/lib/jenkins/workspace/cohezia${fil}"
+                            def remoteFilePath = "/home2/cohezia${fil}"
 
                             // Deploy using SCP
                             try {
