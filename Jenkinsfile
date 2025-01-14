@@ -1,7 +1,11 @@
 pipeline {
     agent any
     environment {
-        staging_server = "3.9.225.94"  
+        // Map of servers and their respective paths
+        servers = [
+            "3.9.225.94" : "/var/lib/jenkins/workspace/cohezia",  
+            "3.9.225.94" : "/home2/coheziatest"
+        ]
     }
     stages {
         stage('Deploy to Remote') {
@@ -12,24 +16,27 @@ pipeline {
                     
                     // Check if files were found
                     if (filesToDeploy.size() > 0) {
-                        // Deploy each file to the remote server
-                        filesToDeploy.each { fileName ->
-                            // Clean the file path and remove the job name part
-                            def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
+                        // Iterate over each server and deploy
+                        servers.each { server, serverPath ->
+                            // Deploy each file to the remote server
+                            filesToDeploy.each { fileName ->
+                                // Clean the file path and remove the job name part
+                                def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
 
-                            // Ensure file path is properly escaped
-                            def remoteFilePath = "/var/lib/jenkins/workspace/cohezia${fil}"
+                                // Ensure the file path is properly escaped
+                                def remoteFilePath = "${serverPath}${fil}"
 
-                            // Deploy using SCP
-                            try {
-                                // Make sure the file paths are correct and that $WORKSPACE is correctly interpolated
-                                sh """
-                                    scp -r ${WORKSPACE}${fil} root@${staging_server}:${remoteFilePath}
-                                """
-                                echo "Successfully deployed: ${fil}"
-                            } catch (Exception e) {
-                                echo "Error deploying file: ${fil}"
-                                currentBuild.result = 'FAILURE'
+                                // Deploy using SCP
+                                try {
+                                    // Ensure file paths are correct and that $WORKSPACE is correctly interpolated
+                                    sh """
+                                        scp -r ${WORKSPACE}${fil} root@${server}:${remoteFilePath}
+                                    """
+                                    echo "Successfully deployed: ${fil} to ${server} at ${remoteFilePath}"
+                                } catch (Exception e) {
+                                    echo "Error deploying file: ${fil} to ${server} at ${remoteFilePath}"
+                                    currentBuild.result = 'FAILURE'
+                                }
                             }
                         }
                     } else {
