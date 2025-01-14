@@ -14,7 +14,7 @@ Options -Indexes
 Options +FollowSymLinks
 
 # Make Drupal handle any 404 errors.
-ErrorDocument 404 /index.php
+ErrorDocument 404 /index.php1
 
 # Force simple error message for requests for non-existent favicon.ico.
 <Files favicon.ico>
@@ -114,3 +114,5 @@ DirectoryIndex index.php
 </IfModule>
 
 # $Id$
+
+
