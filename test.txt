@@ -2,4 +2,3 @@ CICD Pipeline Create
 Using Jenkins
 Test CICD Pipeline
 
-Test remote server Files multiple environments
