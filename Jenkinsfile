@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         staging_server = "3.9.225.94"  
+        remote_base_dir = "/home2/coheziatest"  // Set the desired remote base directory here
     }
     stages {
         stage('Deploy to Remote') {
@@ -17,8 +18,8 @@ pipeline {
                             // Clean the file path and remove the job name part
                             def fil = fileName.replaceAll("${JOB_NAME}", "").trim()
 
-                            // Ensure file path is properly escaped
-                            def remoteFilePath = "/var/lib/jenkins/workspace/cohezia${fil}"
+                            // Construct the full remote file path using the new remote base directory
+                            def remoteFilePath = "${remote_base_dir}${fil}"
 
                             // Deploy using SCP
                             try {
