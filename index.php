@@ -11,5 +11,5 @@ Now we are transforming from VSS to git.
 
 
 
-changes
 
+Now we are transforming from VSS to git.
