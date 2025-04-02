@@ -1,0 +1,40 @@
+name: Deploy to Staging Server
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull request targeting the main branch
+
+jobs:
+  deploy:
+    runs-on: amazonlinux2  # Using Amazon Linux 2 as the runner
+    
+    environment:
+      STAGING_SERVER: "52.56.135.149"  # Updated to the correct IP
+
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Find files modified in the last 10 minutes and deploy them
+      - name: Find files modified in the last 10 minutes
+        id: find_files
+        run: |
+          files=$(find . -type f -mmin -10 | grep -v '.git' | grep -v 'Jenkinsfile')
+          echo "modified_files=$files" >> $GITHUB_ENV
+
+      # Deploy to the staging server
+      - name: Deploy to Remote Server
+        if: env.modified_files != ''
+        run: |
+          for file in $modified_files; do
+            # Clean the file path (remove job name part)
+            fil=$(echo "$file" | sed "s|${GITHUB_REPOSITORY}|/home2/cohezia|")
+            
+            # Deploy file using SCP
+            scp -r $file root@${STAGING_SERVER}:$fil
+            echo "Successfully deployed: $file"
